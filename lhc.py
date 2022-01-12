@@ -112,7 +112,7 @@ elif args.remove:
         total_deleted_size += int(s.size)
 
         if args.verbose:
-          print(f"{txt_delete} {ns}/{pvc}/{s.name}\t{len(s.created)}\t{round(int(s.size)/1024/1024,1)} MB")
+          print(f"{txt_delete} {ns}/{pvc}/{s.name}\t{s.created}\t{round(int(s.size)/1024/1024,1)} MB")
         if not args.dry_run:
           #if not s.removed:
           v.snapshotDelete(name=s.name)
