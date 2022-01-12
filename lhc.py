@@ -27,8 +27,6 @@ parser.add_argument("-u", "--url", default=os.environ.get('LONGHORN_URL'), help=
 
 args = parser.parse_args()
 
-print(args)
-
 
 client = longhorn.Client(url=args.url)
 
@@ -58,6 +56,8 @@ for v in volumes_full.data:
 
 if args.list:
   # exec list mode
+  total_snapshots = 0
+  total_size = 0
   print(f"NAMESPACE\tPVC_NAME\tPV_NAME\tSNAPSHOT_COUNT\tSNAPSHOT_SIZE")
   for ns in sorted(volumes_ns_pvc.keys()):
     if args.namespace != ns and args.namespace is not None:
@@ -68,11 +68,16 @@ if args.list:
         continue
 
       v = volumes_ns_pvc[ns][pvc]
+      total_snapshots += len(v.snapshots_sorted)
+      total_size += int(v.snapshots_size)
       print(f"{ns}\t{pvc}\t{v.name}\t{len(v.snapshots_sorted)}\t{round(int(v.snapshots_size)/1024/1024,1)} MB")
       if args.verbose:
         for s in v.snapshots_sorted:
           deleting = "removal in progress" if s.removed else ""
           print(f"|- {s.name}\t{s.created}\t{round(int(s.size)/1024/1024,1)} MB\tchildren {s.children}\t{deleting}")
+
+  if None is args.pvc:
+    print(f"\nTOTAL\tALL\tVOLUMES\tSNAPSHOTS\t{total_snapshots}\t{round(total_size/1024/1024,1)} MB")
 
 elif args.remove:
   # exec remove mode
@@ -95,7 +100,7 @@ elif args.remove:
       deleted_size = 0
       v = volumes_ns_pvc[ns][pvc]
       c = len(v.snapshots_sorted) # count of retained snaps
-      print(f"{ns}/{pvc}: evaluating {c} snapshots")
+      print(f"{ns}/{pvc}: {c} snapshots")
       for s in v.snapshots_sorted:
         if c <= args.retain_count:
           break
@@ -112,17 +117,18 @@ elif args.remove:
           #if not s.removed:
           v.snapshotDelete(name=s.name)
 
-      if args.verbose:
-        print(f"{txt_submit} purge request for {ns}/{pvc}")
+      if 0 < deleted_snapshots:
+        print(f"{ns}/{pvc}: {txt_deleted} {deleted_snapshots} snapshots, combined size {round(deleted_size/1024/1024,1)} MB")
+        if args.verbose:
+          print(f"{txt_submit} purge request for {ns}/{pvc}")
         if not args.dry_run:
           v.snapshotPurge()
 
-      print(f"{ns}/{pvc}: {txt_deleted} {deleted_snapshots} snapshots, combined size {round(deleted_size/1024/1024,1)} MB")
 
   if None is args.pvc:
-    print(f"TOTAL: {txt_deleted} {total_deleted_snapshots} snapshots, combined size {round(total_deleted_size/1024/1024,1)} MB")
+    print(f"\nTOTAL: {txt_deleted} {total_deleted_snapshots} snapshots, combined size {round(total_deleted_size/1024/1024,1)} MB")
 
-  print(f"NOTE: it takes Longhorn some time to process deletions, please be patient and monitor via the dashboard.")
+  print(f"\nNOTE: it takes Longhorn some time to process deletions, please be patient and monitor via the dashboard.")
 
 else:
   print("Here be dragons!")
