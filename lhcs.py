@@ -17,6 +17,7 @@ group.add_argument("-R", "--remove", action='store_true', help="remove PVC snaps
 
 parser.add_argument("-N", "--namespace", help="limit to specified namespace")
 parser.add_argument("-P", "--pvc", help="limit to specified name (multiple PVCs can have the same name if in different namespaces)")
+parser.add_argument("-S", "--snap-pattern", help="limit to snapshot names matching this pattern")
 
 parser.add_argument("-n", "--dry-run", action='store_true', help="a dry-run will make no changes to the PVCs or snapshots")
 parser.add_argument("-c", "--retain-count", type=int, default=30, help="number of snapshots to retain (default: 30)")
@@ -41,15 +42,16 @@ for v in volumes_full.data:
   snapshots_full = v.snapshotList()
   snapshots_size = 0
   snapshot_head = None
+  my_snapshots = list()
+
   for s in snapshots_full.data:
+    if 'volume-head' == s.name or (args.snap_pattern is not None and args.snap_pattern not in s.name):
+      continue
+
+    my_snapshots.append(s)
     snapshots_size += int(s.size)
 
-    if 'volume-head' == s.name:
-      snapshot_head = s
-
-  snapshots_full.data.remove(snapshot_head)
-
-  snapshots_sorted = sorted(snapshots_full.data, key = itemgetter("created"))
+  snapshots_sorted = sorted(my_snapshots, key = itemgetter("created"))
   v.snapshots_sorted = snapshots_sorted
   v.snapshots_size = snapshots_size
 

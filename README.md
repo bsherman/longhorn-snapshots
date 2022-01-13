@@ -93,6 +93,23 @@ home    esphome pvc-ef709ad6-1035-4c39-8137-4459faefd87f        15      443.8 MB
 |- e3096ad2-d004-4b76-89d5-8e779df754fb 2022-01-12T22:54:46Z    0.0 MB  children {'volume-head': True}
 ```
 
+Or only show snapshots which match a pattern:
+
+```bash
+./lhcs.py -L -N home -v -S c-bbiyfe
+NAMESPACE       PVC_NAME        PV_NAME SNAPSHOT_COUNT  SNAPSHOT_SIZE
+home    esphome pvc-ef709ad6-1035-4c39-8137-4459faefd87f        3       442.7 MB
+|- c-bbiyfe-be41e86d    2021-12-07T10:00:19Z    442.7 MB        children {'c-bbiyfe-acc3104b': True}
+|- c-bbiyfe-acc3104b    2021-12-08T10:00:22Z    0.0 MB  children {'c-bbiyfe-a4b6fc0c': True}
+|- c-bbiyfe-a4b6fc0c    2021-12-09T10:00:21Z    0.0 MB  children {'80751413-0cb3-4532-a64a-7f1799bed460': True}
+home    gitea   pvc-fe8945b2-5f1d-4dac-bc7c-c781e1fa82d6        3       253.7 MB
+|- c-bbiyfe-5e1659c3    2021-12-07T10:00:18Z    207.8 MB        children {'c-bbiyfe-2f4712cc': True}
+|- c-bbiyfe-2f4712cc    2021-12-08T10:00:22Z    23.0 MB children {'c-bbiyfe-6b8ea8e0': True}
+|- c-bbiyfe-6b8ea8e0    2021-12-09T10:00:17Z    22.9 MB children {'0a2a046f-9dba-414d-b31a-08ab9869246d': True}
+
+TOTAL   ALL     VOLSNAPSHOTS    6       696.4 MB
+```
+
 ### Remove Snapshots
 
 Removing snapshots is accomplished using the `-R/--remove` option.
@@ -208,6 +225,28 @@ unifi/unifi: 14 snapshots
 TOTAL: would have deleted 0 snapshots, combined size 0.0 MB
 ```
 
+Or only delete snapshots which match a pattern with `-S / --snap-pattern`. Note that `retain-count` is still in effect so if wanting to delete all snapshots matching a pattern it must be set to `0`.
+
+```bash
+$ ./lhcs.py -R -N home -v -S c-bbiyfe -n -c 0
+home/esphome: 3 snapshots
+would delete home/esphome/c-bbiyfe-be41e86d     2021-12-07T10:00:19Z    442.7 MB
+would delete home/esphome/c-bbiyfe-acc3104b     2021-12-08T10:00:22Z    0.0 MB
+would delete home/esphome/c-bbiyfe-a4b6fc0c     2021-12-09T10:00:21Z    0.0 MB
+home/esphome: would have deleted 3 snapshots, combined size 442.7 MB
+would submit purge request for home/esphome
+home/gitea: 3 snapshots
+would delete home/gitea/c-bbiyfe-5e1659c3       2021-12-07T10:00:18Z    207.8 MB
+would delete home/gitea/c-bbiyfe-2f4712cc       2021-12-08T10:00:22Z    23.0 MB
+would delete home/gitea/c-bbiyfe-6b8ea8e0       2021-12-09T10:00:17Z    22.9 MB
+home/gitea: would have deleted 3 snapshots, combined size 253.7 MB
+would submit purge request for home/gitea
+
+TOTAL: would have deleted 6 snapshots, combined size 696.4 MB
+
+NOTE: it takes Longhorn some time to process deletions, please be patient and monitor via the dashboard.
+```
+
 The simple help docs:
 
 ```bash
@@ -222,6 +261,8 @@ optional arguments:
   -N NAMESPACE, --namespace NAMESPACE
                         limit to specified namespace
   -P PVC, --pvc PVC     limit to specified name (multiple PVCs can have the same name if in different namespaces)
+  -S SNAP_PATTERN, --snap-pattern SNAP_PATTERN
+                        limit to snapshot names matching this pattern
   -n, --dry-run         a dry-run will make no changes to the PVCs or snapshots
   -c RETAIN_COUNT, --retain-count RETAIN_COUNT
                         number of snapshots to retain (default: 30)
