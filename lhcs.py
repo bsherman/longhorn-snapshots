@@ -77,7 +77,7 @@ if args.list:
           print(f"|- {s.name}\t{s.created}\t{round(int(s.size)/1024/1024,1)} MB\tchildren {s.children}\t{deleting}")
 
   if None is args.pvc:
-    print(f"\nTOTAL\tALL\tVOLUMES\tSNAPSHOTS\t{total_snapshots}\t{round(total_size/1024/1024,1)} MB")
+    print(f"\nTOTAL\tALL\tVOLSNAPSHOTS\t{total_snapshots}\t{round(total_size/1024/1024,1)} MB")
 
 elif args.remove:
   # exec remove mode
@@ -128,7 +128,8 @@ elif args.remove:
   if None is args.pvc:
     print(f"\nTOTAL: {txt_deleted} {total_deleted_snapshots} snapshots, combined size {round(total_deleted_size/1024/1024,1)} MB")
 
-  print(f"\nNOTE: it takes Longhorn some time to process deletions, please be patient and monitor via the dashboard.")
+  if 0 < total_deleted_snapshots:
+    print(f"\nNOTE: it takes Longhorn some time to process deletions, please be patient and monitor via the dashboard.")
 
 else:
   print("Here be dragons!")
