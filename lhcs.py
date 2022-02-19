@@ -43,6 +43,10 @@ client = longhorn.Client(url=args.url)
 volumes_full = client.list_volume()
 volumes_ns_pvc = dict()
 for v in volumes_full.data:
+    if 'detached' == v.state:
+        print(f"skipping {v.name}({v.kubernetesStatus['pvcName']}): snapshot operations unavailable for detached volume")
+        continue
+
     if v.kubernetesStatus['namespace'] not in volumes_ns_pvc.keys():
         volumes_ns_pvc[v.kubernetesStatus['namespace']] = dict()
 
